@@ -6053,9 +6053,7 @@ readers do not read off random characters that represent icons */
   font-weight: 400;
   font-display: block;
   src:
-    url("../../font/fa/fa-brands-400.woff2") format("woff2"),
-    url("../../font/fa/fa-brands-400.woff") format("woff"),
-    url("../../font/fa/fa-brands-400.ttf") format("truetype");
+    url("../../font/fa/fa-brands-400.woff2") format("woff2");
 }
 
 .fab {
@@ -6069,9 +6067,7 @@ readers do not read off random characters that represent icons */
   font-weight: 400;
   font-display: block;
   src:
-    url("../../font/fa/fa-regular-400.woff2") format("woff2"),
-    url("../../font/fa/fa-regular-400.woff") format("woff"),
-    url("../../font/fa/fa-regular-400.ttf") format("truetype");
+    url("../../font/fa/fa-regular-400.woff2") format("woff2");
 }
 
 .far {
@@ -6085,9 +6081,7 @@ readers do not read off random characters that represent icons */
   font-weight: 900;
   font-display: block;
   src:
-    url("../../font/fa/fa-solid-900.woff2") format("woff2"),
-    url("../../font/fa/fa-solid-900.woff") format("woff"),
-    url("../../font/fa/fa-solid-900.ttf") format("truetype");
+    url("../../font/fa/fa-solid-900.woff2") format("woff2");
 }
 
 .fa,

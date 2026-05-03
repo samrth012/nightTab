@@ -288,7 +288,15 @@ data.restore = (dataToRestore) => {
   }
 };
 
-data.save = () => {
+// Debounced save. Heavy because it serialises the entire state + every
+// bookmark to localStorage; with 218 callsites across the codebase, naive
+// per-event saves were a measurable hot path during settings spam.
+//
+// Strategy: leading-edge save (so the first action persists immediately),
+// then a 500 ms trailing flush that catches any further calls in the window.
+// `data.save.flush()` forces an immediate write — call it from import/export
+// paths and any spot that needs the on-disk state before yielding control.
+const _doSave = () => {
   data.set(APP_NAME, JSON.stringify({
     [APP_NAME]: true,
     version: version.number,
@@ -296,6 +304,39 @@ data.save = () => {
     bookmark: bookmark.all
   }));
 };
+
+let _saveTimer = null;
+let _savePending = false;
+
+data.save = () => {
+  if (_saveTimer === null) {
+    _doSave();
+    _saveTimer = setTimeout(() => {
+      _saveTimer = null;
+      if (_savePending) {
+        _savePending = false;
+        _doSave();
+      }
+    }, 500);
+  } else {
+    _savePending = true;
+  }
+};
+
+data.save.flush = () => {
+  if (_saveTimer !== null) {
+    clearTimeout(_saveTimer);
+    _saveTimer = null;
+  }
+  _savePending = false;
+  _doSave();
+};
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    if (_saveTimer !== null || _savePending) data.save.flush();
+  });
+}
 
 data.load = () => {
   if (data.get(APP_NAME) !== null && data.get(APP_NAME) !== undefined) {

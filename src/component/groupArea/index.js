@@ -185,12 +185,20 @@ export const GroupArea = function({
     }),
     open: () => {
 
-      if ('tabs' in chrome) {
+      // Cross-browser API: Safari/Firefox expose `browser.*`, Chrome/Edge
+      // expose `chrome.*`. Safari 16+ does alias `chrome` for compatibility,
+      // but referencing the unprefixed `chrome` global directly throws
+      // ReferenceError in some Safari extension contexts. Detect the right
+      // namespace and fall through cleanly if neither is present.
+      const browserAPI = (typeof browser !== 'undefined') ? browser
+        : (typeof chrome !== 'undefined') ? chrome : null;
+
+      if (browserAPI && browserAPI.tabs) {
 
         if (state.get.current().bookmark.newTab) {
 
           groupData.group.items.forEach((item) => {
-            chrome.tabs.create({ url: item.url });
+            browserAPI.tabs.create({ url: item.url });
           });
 
         } else {
@@ -198,7 +206,7 @@ export const GroupArea = function({
           const first = groupData.group.items.shift();
 
           groupData.group.items.forEach((item) => {
-            chrome.tabs.create({ url: item.url });
+            browserAPI.tabs.create({ url: item.url });
           });
 
           window.location.href = first.url;

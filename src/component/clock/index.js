@@ -6,8 +6,7 @@ import { trimString } from '../../utility/trimString';
 import { isValidString } from '../../utility/isValidString';
 import { complexNode } from '../../utility/complexNode';
 import { clearChildNode } from '../../utility/clearChildNode';
-
-import moment from 'moment';
+import { ticker } from '../../utility/ticker';
 
 import './index.css';
 
@@ -15,13 +14,18 @@ export const Clock = function () {
 
   this.now;
 
+  // Cached signature of the visible clock-config slice. Set by update();
+  // assemble() only runs when this changes. Skips full DOM teardown on
+  // every 1s tick when the user hasn't changed any setting.
+  this.lastConfigKey = null;
+
   this.bind = {};
 
   this.bind.tick = () => {
 
-    window.setInterval(() => {
-      this.update();
-    }, 1000);
+    // Subscribe to the shared visibility-aware ticker rather than running
+    // our own setInterval; one timer is shared with the date component.
+    ticker.subscribe(() => this.update());
 
   };
 
@@ -43,19 +47,19 @@ export const Clock = function () {
 
       case 'word':
 
-        value = this.now.hours();
+        value = this.now.getHours();
 
-        if (!state.get.current().header.clock.hour24.show && this.now.hours() > 12) {
+        if (!state.get.current().header.clock.hour24.show && this.now.getHours() > 12) {
           value = value - 12;
         }
 
-        if (!state.get.current().header.clock.hour24.show && this.now.hours() == 0) {
+        if (!state.get.current().header.clock.hour24.show && this.now.getHours() == 0) {
           value = 12;
         }
 
         value = wordNumber(value);
 
-        if (state.get.current().header.clock.hour24.show && this.now.hours() > 0 && this.now.hours() < 10) {
+        if (state.get.current().header.clock.hour24.show && this.now.getHours() > 0 && this.now.getHours() < 10) {
           value = 'Zero ' + value;
         }
 
@@ -63,17 +67,17 @@ export const Clock = function () {
 
       case 'number':
 
-        value = this.now.hours();
+        value = this.now.getHours();
 
-        if (!state.get.current().header.clock.hour24.show && this.now.hours() > 12) {
+        if (!state.get.current().header.clock.hour24.show && this.now.getHours() > 12) {
           value = value - 12;
         }
 
-        if (!state.get.current().header.clock.hour24.show && this.now.hours() == 0) {
+        if (!state.get.current().header.clock.hour24.show && this.now.getHours() == 0) {
           value = 12;
         }
 
-        if (state.get.current().header.clock.hour24.show && this.now.hours() < 10) {
+        if (state.get.current().header.clock.hour24.show && this.now.getHours() < 10) {
           value = '0' + value;
         }
 
@@ -93,9 +97,9 @@ export const Clock = function () {
 
       case 'word':
 
-        value = wordNumber(this.now.minutes());
+        value = wordNumber(this.now.getMinutes());
 
-        if (this.now.minutes() > 0 && this.now.minutes() < 10) {
+        if (this.now.getMinutes() > 0 && this.now.getMinutes() < 10) {
           value = 'Zero ' + value;
         }
 
@@ -103,9 +107,9 @@ export const Clock = function () {
 
       case 'number':
 
-        value = this.now.minutes();
+        value = this.now.getMinutes();
 
-        if (this.now.minutes() < 10) {
+        if (this.now.getMinutes() < 10) {
           value = '0' + value;
         }
 
@@ -125,9 +129,9 @@ export const Clock = function () {
 
       case 'word':
 
-        value = wordNumber(this.now.seconds());
+        value = wordNumber(this.now.getSeconds());
 
-        if (this.now.seconds() > 0 && this.now.seconds() < 10) {
+        if (this.now.getSeconds() > 0 && this.now.getSeconds() < 10) {
           value = 'Zero ' + value;
         }
 
@@ -135,9 +139,9 @@ export const Clock = function () {
 
       case 'number':
 
-        value = this.now.seconds();
+        value = this.now.getSeconds();
 
-        if (this.now.seconds() < 10) {
+        if (this.now.getSeconds() < 10) {
           value = '0' + value;
         }
 
@@ -151,7 +155,7 @@ export const Clock = function () {
 
   this.string.meridiem = () => {
 
-    return this.now.format('A');
+    return this.now.getHours() < 12 ? 'AM' : 'PM';
 
   };
 
@@ -215,29 +219,38 @@ export const Clock = function () {
 
   this.update = () => {
 
-    this.assemble();
+    this.now = new Date();
 
-    this.now = moment();
+    // Only re-assemble the DOM when the visible clock-config slice changes.
+    // On a normal 1s tick, the key matches and we skip clearChildNode + the
+    // querySelectorAll/insertBefore separator loop entirely.
+    const c = state.get.current().header.clock;
+    const configKey = c.hour.show + '|' + c.minute.show + '|' + c.second.show + '|'
+      + c.hour24.show + '|' + c.meridiem.show + '|'
+      + c.separator.show + '|' + c.separator.text;
 
-    if (state.get.current().header.clock.hour.show) {
+    if (configKey !== this.lastConfigKey) {
+      this.assemble();
+      this.lastConfigKey = configKey;
+    }
+
+    if (c.hour.show) {
       this.element.hour.innerHTML = this.string.hour();
     }
 
-    if (state.get.current().header.clock.minute.show) {
+    if (c.minute.show) {
       this.element.minute.innerHTML = this.string.minute();
     }
 
-    if (state.get.current().header.clock.second.show) {
+    if (c.second.show) {
       this.element.second.innerHTML = this.string.second();
     }
 
-    if (!state.get.current().header.clock.hour24.show && state.get.current().header.clock.meridiem.show) {
+    if (!c.hour24.show && c.meridiem.show) {
       this.element.meridiem.innerHTML = this.string.meridiem();
     }
 
   };
-
-  this.assemble();
 
   this.update();
 

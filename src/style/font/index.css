@@ -1,4 +1,4 @@
-/* open sans */
+/* open sans — Safari 14+ supports WOFF2 universally; WOFF/TTF dropped */
 @font-face {
   font-family: "Open Sans";
   font-weight: 400;
@@ -7,9 +7,7 @@
   src:
     local("Open Sans Regular"),
     local("OpenSans-Regular"),
-    url("../../font/open-sans/open-sans-400.woff") format("woff"),
-    url("../../font/open-sans/open-sans-400.woff2") format("woff2"),
-    url("../../font/open-sans/open-sans-400.ttf") format("truetype");
+    url("../../font/open-sans/open-sans-400.woff2") format("woff2");
 }
 
 /* fjalla one */
@@ -20,7 +18,5 @@
   font-display: swap;
   src:
     local("Fjalla One"),
-    url("../../font/fjalla-one/fjalla-one-400.woff") format("woff"),
-    url("../../font/fjalla-one/fjalla-one-400.woff2") format("woff2"),
-    url("../../font/fjalla-one/fjalla-one-400.ttf") format("truetype");
+    url("../../font/fjalla-one/fjalla-one-400.woff2") format("woff2");
 }

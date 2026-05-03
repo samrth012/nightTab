@@ -2,13 +2,13 @@ import { state } from '../state';
 
 import { node } from '../../utility/node';
 import { ordinalWord } from '../../utility/ordinalWord';
+import { ordinalNumber } from '../../utility/ordinalNumber';
 import { wordNumber } from '../../utility/wordNumber';
 import { trimString } from '../../utility/trimString';
 import { isValidString } from '../../utility/isValidString';
 import { complexNode } from '../../utility/complexNode';
 import { clearChildNode } from '../../utility/clearChildNode';
-
-import moment from 'moment';
+import { ticker } from '../../utility/ticker';
 
 import './index.css';
 
@@ -16,13 +16,25 @@ export const Date = function () {
 
   this.now;
 
+  // Cached Intl.DateTimeFormat instances — created once, reused per tick.
+  // Locale: undefined => runtime default (matches moment's default behaviour
+  // which used English; users can change OS locale to localise weekdays/months).
+  this.fmt = {
+    weekdayLong: new Intl.DateTimeFormat(undefined, { weekday: 'long' }),
+    monthLong: new Intl.DateTimeFormat(undefined, { month: 'long' })
+  };
+
+  // Cached signature of the visible date-config slice. Set by update();
+  // assemble() only runs when this changes.
+  this.lastConfigKey = null;
+
   this.bind = {};
 
   this.bind.tick = () => {
 
-    window.setInterval(() => {
-      this.update();
-    }, 1000);
+    // Shared ticker — see src/utility/ticker.js. One timer for clock + date,
+    // aligned to wall-clock seconds, paused while the tab is hidden.
+    ticker.subscribe(() => this.update());
 
   };
 
@@ -44,7 +56,7 @@ export const Date = function () {
 
       case 'word':
 
-        value = this.now.format('dddd');
+        value = this.fmt.weekdayLong.format(this.now);
 
         if (state.get.current().header.date.day.length == 'short') {
           value = value.substring(0, 3);
@@ -54,7 +66,7 @@ export const Date = function () {
 
       case 'number':
 
-        value = this.now.day();
+        value = this.now.getDay();
 
         if (state.get.current().header.date.day.weekStart == 'monday') {
           if (value == 0) {
@@ -81,9 +93,9 @@ export const Date = function () {
       case 'word':
 
         if (state.get.current().header.date.date.ordinal) {
-          value = ordinalWord(wordNumber(this.now.date()));
+          value = ordinalWord(wordNumber(this.now.getDate()));
         } else {
-          value = wordNumber(this.now.date());
+          value = wordNumber(this.now.getDate());
         }
 
         break;
@@ -91,9 +103,9 @@ export const Date = function () {
       case 'number':
 
         if (state.get.current().header.date.date.ordinal) {
-          value = this.now.format('Do');
+          value = ordinalNumber(this.now.getDate());
         } else {
-          value = this.now.format('D');
+          value = String(this.now.getDate());
         }
 
         break;
@@ -112,7 +124,7 @@ export const Date = function () {
 
       case 'word':
 
-        value = this.now.format('MMMM');
+        value = this.fmt.monthLong.format(this.now);
         if (state.get.current().header.date.month.length == 'short') {
           value = value.substring(0, 3);
         }
@@ -122,9 +134,9 @@ export const Date = function () {
       case 'number':
 
         if (state.get.current().header.date.month.ordinal) {
-          value = this.now.format('Mo');
+          value = ordinalNumber(this.now.getMonth() + 1);
         } else {
-          value = this.now.format('M');
+          value = String(this.now.getMonth() + 1);
         }
 
         break;
@@ -143,13 +155,13 @@ export const Date = function () {
 
       case 'word':
 
-        value = wordNumber(this.now.format('YYYY'));
+        value = wordNumber(this.now.getFullYear());
 
         break;
 
       case 'number':
 
-        value = this.now.format('YYYY');
+        value = String(this.now.getFullYear());
 
         break;
 
@@ -252,29 +264,36 @@ export const Date = function () {
 
   this.update = () => {
 
-    this.assemble();
+    this.now = new globalThis.Date();
 
-    this.now = moment();
+    // Only re-assemble when the visible date-config slice changes.
+    // On a normal tick the key matches and the DOM teardown is skipped.
+    const d = state.get.current().header.date;
+    const configKey = d.day.show + '|' + d.date.show + '|' + d.month.show + '|' + d.year.show + '|'
+      + d.format + '|' + d.separator.show + '|' + d.separator.text;
 
-    if (state.get.current().header.date.day.show) {
+    if (configKey !== this.lastConfigKey) {
+      this.assemble();
+      this.lastConfigKey = configKey;
+    }
+
+    if (d.day.show) {
       this.element.day.innerHTML = this.string.day();
     }
 
-    if (state.get.current().header.date.date.show) {
+    if (d.date.show) {
       this.element.dateOfMonth.innerHTML = this.string.dateOfMonth();
     }
 
-    if (state.get.current().header.date.month.show) {
+    if (d.month.show) {
       this.element.month.innerHTML = this.string.month();
     }
 
-    if (state.get.current().header.date.year.show) {
+    if (d.year.show) {
       this.element.year.innerHTML = this.string.year();
     }
 
   };
-
-  this.assemble();
 
   this.update();
 

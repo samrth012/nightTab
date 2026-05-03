@@ -23,7 +23,12 @@ module.exports = {
         use: ['style-loader', 'css-loader']
       },
       {
-        test: /\.(ttf|woff|woff2)$/,
+        // WOFF2 only — Safari 14+, Chrome 36+, Firefox 39+ all support it.
+        // TTF and WOFF are no longer emitted; the corresponding @font-face
+        // src lines have been pruned in src/style/font/index.css and
+        // src/component/fontawesome/index.css. Removing the duplicates
+        // shrinks dist/web/font/ by roughly 3x per family.
+        test: /\.woff2$/,
         type: 'asset/resource',
         generator: {
           filename: 'font/[name][ext]',

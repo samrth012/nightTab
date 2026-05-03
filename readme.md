@@ -6,9 +6,24 @@ A neutral new tab page accented with a chosen colour. Customise the layout, styl
 |:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
 | [<img src="./src/icon/icon-48.png" width="48px" height="48px">](https://zombiefox.github.io/nightTab/) | [![Chrome](asset/logo/chrome-48.png)](https://chrome.google.com/webstore/detail/nighttab/hdpcadigjkbcpnlcpbcohpafiaefanki) | [![Firefox](asset/logo/firefox-48.png)](https://addons.mozilla.org/en-GB/firefox/addon/nighttab/) | [![coffee](asset/logo/bymeacoffee-48.png)](https://www.buymeacoffee.com/zombieFox/) | [![Reddit](asset/logo/reddit-48.png)](https://www.reddit.com/r/nighttab/) |
 
-| [Install nightTab Extension](https://github.com/samrth012/nightTab/releases/latest) |
+| [Install nightTab for Safari](https://github.com/sa1ntsinner/nightTab/releases/latest) |
 |:-------------:|
-| [![Safari](asset/logo/safari-48.png)](https://github.com/samrth012/nightTab/releases/latest)
+| [![Safari](asset/logo/safari-48.png)](https://github.com/sa1ntsinner/nightTab/releases/latest)
+
+---
+
+## macOS / Safari
+
+This is a performance-improved build of [samrth012's Safari port](https://github.com/samrth012/nightTab) of [nightTab by zombieFox](https://github.com/zombieFox/nightTab). The changes compared to samrth012's build are small and low-risk:
+
+- **Dropped moment.js** — replaced with native `Date` and `Intl.DateTimeFormat` (~−250 KB from the bundle)
+- **Clock and date no longer rebuild the DOM every second** — only rebuild when the display settings actually change
+- **Single shared timer** — one interval drives both clock and date, pauses when the tab is hidden
+- **Debounced settings saves** — `localStorage` writes are throttled to ~500 ms instead of every keypress
+- **Cross-browser API shim** — uses `browser.tabs` when available, falls back to `chrome.tabs`
+- **WOFF2-only fonts** — dropped redundant TTF and WOFF files (~−680 KB from the bundle)
+
+---
 
 # Support
 
@@ -38,6 +53,8 @@ To build the project use:
 
 A web ready folder will be created in `/dist/web/`.
 A browser addon/extension ready zip will be created in `/dist/extension/`.
+
+For the macOS/Safari build, see the [Building locally](#building-locally-macos) section above.
 
 # Screenshots
 
